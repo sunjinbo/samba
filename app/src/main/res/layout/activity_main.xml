@@ -9,16 +9,18 @@
     tools:context=".MainActivity">
 
     <Button
+        android:id="@+id/btn_auth"
         android:onClick="onAuthenticationClick"
         android:text="登录授权"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
     <Button
+        android:id="@+id/btn_explore"
         android:onClick="onExploreClick"
         android:text="浏览文件"
+        android:enabled="false"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
-
 
 </LinearLayout>
