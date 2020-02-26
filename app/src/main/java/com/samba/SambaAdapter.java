@@ -13,8 +13,6 @@ import androidx.annotation.Nullable;
 
 public class SambaAdapter extends ArrayAdapter<SambaFile> {
 
-    private static final String TAG = "samba";
-
     private int mResourceId;
 
     public SambaAdapter(@NonNull Context context, int resourceId) {
@@ -25,7 +23,7 @@ public class SambaAdapter extends ArrayAdapter<SambaFile> {
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-        SambaFile smbFile = getItem(position);//获取当前项的Weather实例
+        SambaFile smbFile = getItem(position);
         ViewHolder holder;
         if (convertView == null) {
             convertView = LayoutInflater.from(getContext()).inflate(mResourceId, null);
