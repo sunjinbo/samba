@@ -1,7 +1,5 @@
 package com.samba;
 
-import android.text.TextUtils;
-
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
 
@@ -38,7 +36,13 @@ public class SambaFile {
     }
 
     public String getName() {
+//        if(isDirectory()){
+//            if (!TextUtils.isEmpty(mName)) {
+//                mName = mName.substring(0, mName.length() - 1);
+//            }
+//        }
         return mName;
+
     }
 
     public String getPath() {
@@ -51,9 +55,6 @@ public class SambaFile {
 
     private static String getName(SmbFile smbFile) {
         String name = smbFile.getName();
-        if (!TextUtils.isEmpty(name)) {
-            name = name.substring(0, name.length() - 1);
-        }
         return name;
     }
 }

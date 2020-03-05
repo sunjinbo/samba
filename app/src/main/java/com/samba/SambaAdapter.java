@@ -1,6 +1,7 @@
 package com.samba;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,8 +39,13 @@ public class SambaAdapter extends ArrayAdapter<SambaFile> {
         } else {
             holder.icon.setImageDrawable(getContext().getResources().getDrawable(R.drawable.document));
         }
-
-        holder.name.setText(smbFile.getName());
+        String name = smbFile.getName();
+        if(smbFile.isDirectory()){
+            if (!TextUtils.isEmpty(name)) {
+                name = name.substring(0, name.length() - 1);
+            }
+        }
+        holder.name.setText(name);
 
         return convertView;
     }
