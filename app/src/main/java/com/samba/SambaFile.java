@@ -42,15 +42,27 @@ public class SambaFile {
 //            }
 //        }
         return mName;
-
     }
 
     public String getPath() {
         return mPath;
     }
 
+    public String getFullPath() {
+        return getPath() + getName();
+    }
+
     public boolean isDirectory() {
         return mIsDirectory;
+    }
+
+    public boolean isImage() {
+        String name = getName().toLowerCase();
+        return name.endsWith(".png") ||
+                name.endsWith(".jpg") ||
+                name.endsWith(".jpeg") ||
+                name.endsWith(".bmp") ||
+                name.endsWith(".gif");
     }
 
     private static String getName(SmbFile smbFile) {

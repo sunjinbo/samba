@@ -55,9 +55,9 @@ public class ExploreActivity extends AppCompatActivity implements
     private boolean mCopy;
     private View mMovingLayout;
     private String mMovingPath;
-    private String mMoveingName;
+    private String mMovingName;
     private TextView mUploadBtn;
-    private TextView mCacheBtn;
+    private TextView mDownloadBtn;
     private RelativeLayout mProgressLayout;
     private ProgressBar mProgress;
     private TextView mProgressTitle;
@@ -95,9 +95,9 @@ public class ExploreActivity extends AppCompatActivity implements
 
         mUploadBtn.setOnClickListener(this);
 
-        mCacheBtn = findViewById(R.id.btn_cache);
+        mDownloadBtn = findViewById(R.id.btn_download);
 
-        mCacheBtn.setOnClickListener(this);
+        mDownloadBtn.setOnClickListener(this);
 
         mProgressLayout = findViewById(R.id.progress_layout);
         mProgressLayout.setVisibility(View.GONE);
@@ -170,75 +170,6 @@ public class ExploreActivity extends AppCompatActivity implements
             mStatusTextView.setText("正在加载中...");
             mCurrentFile = itemFile;
             new Thread(this).start();
-        }else{
-            //打开文件
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    //缓存路径
-                    final String toPath = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath() + File.separator + name;
-                    Log.d(TAG,"toPath="+toPath);
-                    File toFile = new File(toPath);
-                    if(!toFile.exists()){
-                        //先下载到本地缓存
-                        toFile = SambaModel.getModel().download(path, toPath, new SambaModel.OnDownloadListener() {
-                            @Override
-                            public void onStart() {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        mProgressLayout.setVisibility(View.VISIBLE);
-                                        mProgressTitle.setText("正在下载");
-                                    }
-                                });
-                            }
-
-                            @Override
-                            public void onProgressUpdate(final Integer progress) {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        mProgress.setProgress(progress);
-                                    }
-                                });
-                            }
-
-                            @Override
-                            public void onComplete() {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        mProgressLayout.setVisibility(View.GONE);
-                                    }
-                                });
-                            }
-                        });
-                    }
-
-                    mOpenFilePath = toPath;
-                    //增加文件监听，如果打开的文件内容被修改则上传最新的缓存文件替换smb服务器上的文件
-                    if(listener != null){
-                        listener.stopWatching();
-                        listener = new FileChangeListener(toPath);
-                        listener.startWatching();
-                    }else{
-                        listener = new FileChangeListener(toPath);
-                        listener.startWatching();
-                    }
-
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                OpenFileUtils.openFile(ExploreActivity.this, toPath);
-                            } catch (Exception e) {
-                                Toast.makeText(ExploreActivity.this,"无可用打开方式",Toast.LENGTH_SHORT).show();
-                                e.printStackTrace();
-                            }
-                        }
-                    });
-                }
-            }).start();
         }
     }
 
@@ -284,7 +215,7 @@ public class ExploreActivity extends AppCompatActivity implements
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            String toPath = mCurrentFile.getPath() + mMoveingName;
+                            String toPath = mCurrentFile.getPath() + mMovingName;
                             if(!TextUtils.equals(mMovingPath,toPath)){
                                 SambaModel.getModel().move(mMovingPath,toPath);
                                 mMovingPath = null;
@@ -297,7 +228,7 @@ public class ExploreActivity extends AppCompatActivity implements
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            String toPath = mCurrentFile.getPath() + mMoveingName;
+                            String toPath = mCurrentFile.getPath() + mMovingName;
                             SambaModel.getModel().copy(mMovingPath,toPath);
                             mMovingPath = null;
                             new Thread(ExploreActivity.this).start();
@@ -306,66 +237,14 @@ public class ExploreActivity extends AppCompatActivity implements
                 }
             }
         }else if(v.getId() == mUploadBtn.getId()){
-            //文件上传按钮
-            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-            intent.setType("*/*");
-            intent.addCategory(Intent.CATEGORY_OPENABLE);
-            startActivityForResult(Intent.createChooser(intent, "Select a File to Upload"), CHOOSE_FILE_CODE);
-
-        }else if(v.getId() == mCacheBtn.getId()){
-            //展示本地缓存目录地址
-            File destDir = getApplicationContext().getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
-            Toast.makeText(this,destDir.getAbsolutePath(),Toast.LENGTH_LONG).show();
+            startActivity(new Intent(this, UploadActivity.class));
+        }else if(v.getId() == mDownloadBtn.getId()){
+            startActivity(new Intent(this, DownloadActivity.class));
         }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        if (resultCode == Activity.RESULT_OK) {
-            if (requestCode == CHOOSE_FILE_CODE) {
-                final Uri uri = data.getData();
-                final String path = UriUtil.getPath(this,uri);
-                Log.d(TAG,"choose file path="+path);
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        SambaModel.getModel().upload(ExploreActivity.this,uri, path,mCurrentFile.getPath(),new SambaModel.OnUploadListener() {
-                            @Override
-                            public void onStart() {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        mProgressLayout.setVisibility(View.VISIBLE);
-                                        mProgressTitle.setText("正在上传");
-                                    }
-                                });
-                            }
-
-                            @Override
-                            public void onProgressUpdate(final Integer progress) {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        mProgress.setProgress(progress);
-                                    }
-                                });
-                            }
-
-                            @Override
-                            public void onComplete() {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        mProgressLayout.setVisibility(View.GONE);
-                                    }
-                                });
-                            }
-                        });
-                        new Thread(ExploreActivity.this).start();
-                    }
-                }).start();
-            }
-        }
         super.onActivityResult(requestCode, resultCode, data);
     }
 
@@ -391,14 +270,14 @@ public class ExploreActivity extends AppCompatActivity implements
             case R.id.move:
                 mMovingText.setText(getString(R.string.moving_file, fname));
                 mMovingPath = path;
-                mMoveingName = fname;
+                mMovingName = fname;
                 mCopy = false;
                 mMovingLayout.setVisibility(View.VISIBLE);
                 break;
             case R.id.copy:
                 mMovingText.setText(getString(R.string.copy_file, fname));
                 mMovingPath = path;
-                mMoveingName = fname;
+                mMovingName = fname;
                 mCopy = true;
                 mMovingLayout.setVisibility(View.VISIBLE);
                 break;
@@ -406,45 +285,6 @@ public class ExploreActivity extends AppCompatActivity implements
                 //下载
                 final String finalPath = path;
                 final String finalFname = fname;
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        String toPath = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath() + File.separator + finalFname;
-                        File file = SambaModel.getModel().download(finalPath,toPath,new SambaModel.OnDownloadListener() {
-                            @Override
-                            public void onStart() {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        mProgressLayout.setVisibility(View.VISIBLE);
-                                        mProgressTitle.setText("正在下载");
-                                    }
-                                });
-                            }
-
-                            @Override
-                            public void onProgressUpdate(final Integer progress) {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        mProgress.setProgress(progress);
-                                    }
-                                });
-                            }
-
-                            @Override
-                            public void onComplete() {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        mProgressLayout.setVisibility(View.GONE);
-                                    }
-                                });
-                            }
-                        });
-
-                    }
-                }).start();
                 break;
         }
     }
@@ -528,54 +368,7 @@ public class ExploreActivity extends AppCompatActivity implements
 
         @Override
         public void onEvent(int event, String path) {
-            switch (event){
-                case FileObserver.MODIFY:
-                    //这里文件通过第三方app打开修改保存后会执行两次（不清楚为啥），为了避免多次更新，做个标示位
-                    if(!isFileChanged){
-                        isFileChanged = true;
-                        //上传文件
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                SambaModel.getModel().upload(ExploreActivity.this,Uri.fromFile(new File(mOpenFilePath)), mOpenFilePath,mCurrentFile.getPath(),new SambaModel.OnUploadListener() {
-                                    @Override
-                                    public void onStart() {
-                                        runOnUiThread(new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                mProgressLayout.setVisibility(View.VISIBLE);
-                                                mProgressTitle.setText("正在上传");
-                                            }
-                                        });
-                                    }
 
-                                    @Override
-                                    public void onProgressUpdate(final Integer progress) {
-                                        runOnUiThread(new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                mProgress.setProgress(progress);
-                                            }
-                                        });
-                                    }
-
-                                    @Override
-                                    public void onComplete() {
-                                        runOnUiThread(new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                mProgressLayout.setVisibility(View.GONE);
-                                            }
-                                        });
-                                        isFileChanged = false;
-                                    }
-                                });
-                                new Thread(ExploreActivity.this).start();
-                            }
-                        }).start();
-                    }
-                    break;
-            }
         }
     }
 

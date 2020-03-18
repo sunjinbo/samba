@@ -16,7 +16,7 @@
         >
 
         <TextView
-            android:id="@+id/btn_cache"
+            android:id="@+id/btn_download"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="16dp"
@@ -24,7 +24,7 @@
             android:layout_alignParentLeft="true"
             android:layout_centerVertical="true"
             android:layout_marginLeft="20dp"
-            android:text="本地缓存目录"></TextView>
+            android:text="下载文件" />
 
         <TextView
             android:layout_width="wrap_content"

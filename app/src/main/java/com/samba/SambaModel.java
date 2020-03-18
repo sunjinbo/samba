@@ -28,7 +28,7 @@ public class SambaModel {
 
     public final static String SMB_URL_LAN = "smb://";
 
-    public final static int IO_BUFFER_SIZE = 1 * 1024;
+    public final static int IO_BUFFER_SIZE = 32 * 1024;
 
     private static SambaModel sModel = new SambaModel();
 
@@ -244,7 +244,7 @@ public class SambaModel {
         return download(fromPath,toPath);
     }
 
-    //文件下载
+    // 文件下载
     public File download(String fromPath, String toPath) {
         File toFile = null;
         SmbFile fromFile = null;
@@ -260,13 +260,13 @@ public class SambaModel {
             final long size = fromFile.length();
 
             if(downloadListener != null){
-                downloadListener.onStart();
+                downloadListener.onDownloadStarted();
             }
 
             writeAndCloseStream(inS, outS, size);
 
             if(downloadListener != null){
-                downloadListener.onComplete();
+                downloadListener.onDownloadCompleted();
             }
 
             return toFile;
@@ -304,20 +304,19 @@ public class SambaModel {
 
                 //SPEED
                 final float speed = ((float) length) / deltaMill;
-                final float avegSpeed = uploaded / (currentMill - startMills);
+                final float avgSpeed = uploaded / (currentMill - startMills);
+
+//                Log.d(TAG, "speed = " + speed + ", avgSpeed = " + avgSpeed);
 
                 //PROGRESS
                 float progress = (totalSize <= 0) ? -1 : (uploaded * 100) / totalSize;
 
                 if(downloadListener != null){
-                    downloadListener.onProgressUpdate((int)progress);
+                    downloadListener.onDownloadProgressUpdated((int)progress);
                 }
                 if(uploadListener != null){
-                    uploadListener.onProgressUpdate((int)progress);
+                    uploadListener.onUploadProgressUpdated((int)progress);
                 }
-
-                Log.d(TAG, "writeAndCloseStream progress:" + progress + "   transfered=" + uploaded + "    speed=" + speed + "/" + avegSpeed);
-
             }
         } catch (Exception e) {
             throw e;
@@ -334,7 +333,7 @@ public class SambaModel {
     }
 
     //文件上传
-    public void upload(Context ctx,Uri uri,String sdCardFilePath, String smbCurPath) {
+    public void upload(Context ctx,Uri uri, String sdCardFilePath, String smbCurPath) {
 
         ParcelFileDescriptor parcelFileDescriptor = null;
         FileInputStream inS = null;
@@ -352,12 +351,12 @@ public class SambaModel {
             SmbFileOutputStream outS = new SmbFileOutputStream(toFile);
             try {
                 if(uploadListener != null){
-                    uploadListener.onStart();
+                    uploadListener.onUploadStarted();
                 }
                 writeAndCloseStream(inS, outS, sdFile.length());
 
                 if(uploadListener != null){
-                    uploadListener.onComplete();
+                    uploadListener.onUploadCompleted();
                 }
 
             } catch (Exception e) {
@@ -374,16 +373,53 @@ public class SambaModel {
 
     }
 
+    public void upload(String sdCardFilePath, String smbCurPath, OnUploadListener listener) {
+        this.uploadListener = listener;
+
+        FileInputStream inS = null;
+        File sdFile = null;
+        SmbFile toFile = null;
+        try {
+            sdFile = new File(sdCardFilePath);
+            String toPath = smbCurPath;
+            toFile = new SmbFile(toPath,mAuthentication);
+            if(!toFile.exists()) {
+                toFile.createNewFile();
+            }
+
+            inS = new FileInputStream(sdFile);
+            SmbFileOutputStream outS = new SmbFileOutputStream(toFile);
+            try {
+                if(uploadListener != null){
+                    uploadListener.onUploadStarted();
+                }
+                writeAndCloseStream(inS, outS, sdFile.length());
+
+                if(uploadListener != null){
+                    uploadListener.onUploadCompleted();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (SmbException e) {
+            e.printStackTrace();
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
     public interface OnDownloadListener{
-        void onStart();
-        void onProgressUpdate(Integer progress);
-        void onComplete();
+        void onDownloadStarted();
+        void onDownloadProgressUpdated(Integer progress);
+        void onDownloadCompleted();
     }
 
     public interface OnUploadListener{
-        void onStart();
-        void onProgressUpdate(Integer progress);
-        void onComplete();
+        void onUploadStarted();
+        void onUploadProgressUpdated(Integer progress);
+        void onUploadCompleted();
     }
-
 }
